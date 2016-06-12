@@ -252,3 +252,39 @@ func BVNeg(a Term) Term {
 func BVNot(a Term) Term {
 	return NewApp("bvnot", a)
 }
+
+type Sexp interface {
+	sexp()
+}
+
+type SList struct {
+	List []Sexp
+}
+
+type SSymbol struct {
+	Symbol string
+}
+
+type SString struct {
+	String string
+}
+
+type SKeyword struct {
+	Keyword string
+}
+
+type SInt struct {
+	Int int
+}
+
+type SBitVec struct {
+	Value int64
+	Width int64
+}
+
+func (*SList) sexp()    {}
+func (*SSymbol) sexp()  {}
+func (*SString) sexp()  {}
+func (*SKeyword) sexp() {}
+func (*SInt) sexp()     {}
+func (*SBitVec) sexp()  {}
