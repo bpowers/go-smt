@@ -257,7 +257,7 @@ func lexMultiComment(l *smtLex) stateFn {
 
 func lexInteger(l *smtLex) stateFn {
 	l.acceptRun("0123456789")
-	l.emit(YINT, iInt)
+	l.emit(yINT, iInt)
 	return lexStatement
 }
 
@@ -271,7 +271,7 @@ func lexString(l *smtLex) stateFn {
 	if l.peek() != delim {
 		return l.errorf("unexpected EOF")
 	}
-	l.emit(YSTRING, iString)
+	l.emit(ySTRING, iString)
 	l.next()
 	l.ignore()
 	return lexStatement
@@ -282,7 +282,7 @@ func lexKeyword(l *smtLex) stateFn {
 	for r := l.next(); r != eof && !isOperator(r) && !unicode.IsSpace(r); r = l.next() {
 	}
 	l.backup()
-	l.emit(YKEYWORD, iKeyword)
+	l.emit(yKEYWORD, iKeyword)
 	return lexStatement
 }
 
@@ -290,7 +290,7 @@ func lexSymbol(l *smtLex) stateFn {
 	for r := l.next(); r != eof && !isOperator(r) && !unicode.IsSpace(r); r = l.next() {
 	}
 	l.backup()
-	l.emit(YSYMBOL, iSymbol)
+	l.emit(ySYMBOL, iSymbol)
 	return lexStatement
 }
 

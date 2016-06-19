@@ -19,21 +19,21 @@ type smtSymType struct {
 	tok tok
 }
 
-const YINT = 57346
-const YHEX = 57347
-const YSTRING = 57348
-const YSYMBOL = 57349
-const YKEYWORD = 57350
+const yINT = 57346
+const yHEX = 57347
+const ySTRING = 57348
+const ySYMBOL = 57349
+const yKEYWORD = 57350
 
 var smtToknames = [...]string{
 	"$end",
 	"error",
 	"$unk",
-	"YINT",
-	"YHEX",
-	"YSTRING",
-	"YSYMBOL",
-	"YKEYWORD",
+	"yINT",
+	"yHEX",
+	"ySTRING",
+	"ySYMBOL",
+	"yKEYWORD",
 	"'('",
 	"')'",
 }

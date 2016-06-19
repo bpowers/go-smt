@@ -29,7 +29,7 @@ import (
 %type <sexp>   sexp
 
 // same for terminals
-%token <tok> YINT YHEX YSTRING YSYMBOL YKEYWORD
+%token <tok> yINT yHEX ySTRING ySYMBOL yKEYWORD
 
 %%
 
@@ -50,20 +50,20 @@ sexp_list:
 	}
 ;
 
-sexp:	YINT
+sexp:	yINT
 	{
 		i, _ := strconv.Atoi($1.val)
 		$$ = &SInt{i}
 	}
-|	YSTRING
+|	ySTRING
 	{
 		$$ = &SString{$1.val}
 	}
-|	YSYMBOL
+|	ySYMBOL
 	{
 		$$ = &SSymbol{$1.val}
 	}
-|	YKEYWORD
+|	yKEYWORD
 	{
 		$$ = &SKeyword{$1.val}
 	}
