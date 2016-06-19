@@ -1,5 +1,9 @@
 package smt
 
+import (
+	"fmt"
+)
+
 type Identifier string
 type Satisfiable int
 
@@ -255,6 +259,7 @@ func BVNot(a Term) Term {
 
 type Sexp interface {
 	sexp()
+	String() string
 }
 
 type SList struct {
@@ -266,7 +271,7 @@ type SSymbol struct {
 }
 
 type SString struct {
-	String string
+	Str string
 }
 
 type SKeyword struct {
@@ -288,3 +293,18 @@ func (*SString) sexp()  {}
 func (*SKeyword) sexp() {}
 func (*SInt) sexp()     {}
 func (*SBitVec) sexp()  {}
+
+func (s *SList) String() string {
+	r := "("
+	for _, child := range s.List {
+		r += child.String()
+		r += " "
+	}
+	r += ")"
+	return r
+}
+func (s *SSymbol) String() string  { return s.Symbol }
+func (s *SString) String() string  { return fmt.Sprintf(`"%s"`, s.Str) }
+func (s *SKeyword) String() string { return fmt.Sprintf(":%s", s.Keyword) }
+func (s *SInt) String() string     { return fmt.Sprintf("%v", s.Int) }
+func (s *SBitVec) String() string  { return fmt.Sprintf("(_ bv%d %d)", s.Value, s.Width) }

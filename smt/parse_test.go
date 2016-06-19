@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/token"
-	"log"
 	"reflect"
 	"testing"
 )
@@ -41,9 +40,15 @@ func TestSexpRT(t *testing.T) {
 		if !reflect.DeepEqual(sexps[0], test.sexp) {
 			buf, err := json.Marshal(sexps[0])
 			if err != nil {
-				log.Printf("couldn't encode")
+				t.Fatalf("couldn't encode %#v", sexps[0])
 			}
 			t.Fatalf("expected %s == %#v", string(buf), test.sexp)
+		}
+
+		sRT := sexps[0].String()
+		sExpected := test.sexp.String()
+		if sRT != sExpected {
+			t.Fatalf("serialized versions differ: %s != %s", sRT, sExpected)
 		}
 	}
 }
