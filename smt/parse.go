@@ -43,7 +43,7 @@ const smtEofCode = 1
 const smtErrCode = 2
 const smtInitialStackSize = 16
 
-//line parse.y:69
+//line parse.y:77
 
 /* start of programs */
 
@@ -67,42 +67,45 @@ var smtExca = [...]int{
 	-2, 0,
 }
 
-const smtNprod = 8
+const smtNprod = 9
 const smtPrivate = 57344
 
 var smtTokenNames []string
 var smtStates []string
 
-const smtLast = 17
+const smtLast = 18
 
 var smtAct = [...]int{
 
-	3, 2, 4, 5, 6, 7, 9, 3, 1, 4,
-	5, 6, 7, 0, 0, 0, 8,
+	4, 3, 5, 6, 7, 8, 10, 4, 2, 5,
+	6, 7, 8, 1, 0, 0, 0, 9,
 }
 var smtPact = [...]int{
 
-	-1000, 3, -1000, -1000, -1000, -1000, -1000, -1000, -4, -1000,
+	-1000, -1000, 3, -1000, -1000, -1000, -1000, -1000, -1000, -4,
+	-1000,
 }
 var smtPgo = [...]int{
 
-	0, 8, 1,
+	0, 8, 13, 1,
 }
 var smtR1 = [...]int{
 
-	0, 1, 1, 2, 2, 2, 2, 2,
+	0, 2, 1, 1, 3, 3, 3, 3, 3,
 }
 var smtR2 = [...]int{
 
-	0, 0, 2, 1, 1, 1, 1, 3,
+	0, 1, 0, 2, 1, 1, 1, 1, 3,
 }
 var smtChk = [...]int{
 
-	-1000, -1, -2, 4, 6, 7, 8, 9, -1, 10,
+	-1000, -2, -1, -3, 4, 6, 7, 8, 9, -1,
+	10,
 }
 var smtDef = [...]int{
 
-	1, -2, 2, 3, 4, 5, 6, 1, 0, 7,
+	2, -2, 1, 3, 4, 5, 6, 7, 2, 0,
+	8,
 }
 var smtTok1 = [...]int{
 
@@ -458,45 +461,52 @@ smtdefault:
 	switch smtnt {
 
 	case 1:
+		smtDollar = smtS[smtpt-1 : smtpt+1]
+		//line parse.y:37
+		{
+			smtVAL.sexps = smtDollar[1].sexps
+			*smtlex.(*smtLex).result = smtVAL.sexps
+		}
+	case 2:
 		smtDollar = smtS[smtpt-0 : smtpt+1]
-		//line parse.y:36
+		//line parse.y:44
 		{
 			smtVAL.sexps = []Sexp{}
 		}
-	case 2:
+	case 3:
 		smtDollar = smtS[smtpt-2 : smtpt+1]
-		//line parse.y:40
+		//line parse.y:48
 		{
 			smtVAL.sexps = append(smtDollar[1].sexps, smtDollar[2].sexp)
 		}
-	case 3:
+	case 4:
 		smtDollar = smtS[smtpt-1 : smtpt+1]
-		//line parse.y:46
+		//line parse.y:54
 		{
 			i, _ := strconv.Atoi(smtDollar[1].tok.val)
 			smtVAL.sexp = &SInt{i}
 		}
-	case 4:
-		smtDollar = smtS[smtpt-1 : smtpt+1]
-		//line parse.y:51
-		{
-			smtVAL.sexp = &SString{smtDollar[1].tok.val}
-		}
 	case 5:
-		smtDollar = smtS[smtpt-1 : smtpt+1]
-		//line parse.y:55
-		{
-			smtVAL.sexp = &SSymbol{smtDollar[1].tok.val}
-		}
-	case 6:
 		smtDollar = smtS[smtpt-1 : smtpt+1]
 		//line parse.y:59
 		{
-			smtVAL.sexp = &SKeyword{smtDollar[1].tok.val}
+			smtVAL.sexp = &SString{smtDollar[1].tok.val}
+		}
+	case 6:
+		smtDollar = smtS[smtpt-1 : smtpt+1]
+		//line parse.y:63
+		{
+			smtVAL.sexp = &SSymbol{smtDollar[1].tok.val}
 		}
 	case 7:
+		smtDollar = smtS[smtpt-1 : smtpt+1]
+		//line parse.y:67
+		{
+			smtVAL.sexp = &SKeyword{smtDollar[1].tok.val}
+		}
+	case 8:
 		smtDollar = smtS[smtpt-3 : smtpt+1]
-		//line parse.y:63
+		//line parse.y:71
 		{
 			smtVAL.sexp = &SList{smtDollar[2].sexps}
 		}

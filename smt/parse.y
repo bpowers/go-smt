@@ -25,7 +25,7 @@ import (
 
 // any non-terminal which returns a value needs a type, which is
 // really a field name in the above union struct
-%type <sexps>  sexp_list
+%type <sexps>  sexp_list top
 %type <sexp>   sexp
 
 // same for terminals
@@ -33,7 +33,15 @@ import (
 
 %%
 
-sexp_list:	{
+top:	sexp_list
+	{
+		$$ = $1
+		*smtlex.(*smtLex).result = $$
+	}
+;
+
+sexp_list:
+	{
 		$$ = []Sexp{}
 	}
 |	sexp_list sexp

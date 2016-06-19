@@ -108,6 +108,7 @@ func (l *smtLex) Error(s string) {
 
 func (l *smtLex) next() rune {
 	if l.pos >= len(l.s) {
+		l.width = 0
 		return 0
 	}
 	r, width := utf8.DecodeRuneInString(l.s[l.pos:])
@@ -131,6 +132,9 @@ func (l *smtLex) peek() rune {
 }
 
 func (l *smtLex) ignore() {
+	if l.start == l.pos {
+		log.Printf("ignore: start == pos (%d), error.", l.start)
+	}
 	l.start = l.pos
 }
 
@@ -155,10 +159,12 @@ func (l *smtLex) emit(yyTy rune, ty iType) {
 		yyKind: int(yyTy),
 		kind:   ty,
 	}
-	//log.Printf("t: %#v\n", t)
+	// log.Printf("t(%s): %#v\n", l.s[l.start:l.pos], t)
 	l.last = t
 	l.items <- t
-	l.ignore()
+	if ty != iEOF {
+		l.ignore()
+	}
 }
 
 func (l *smtLex) errorf(format string, args ...interface{}) stateFn {
@@ -187,15 +193,19 @@ func lexStatement(l *smtLex) stateFn {
 	case unicode.IsDigit(r):
 		l.backup()
 		return lexInteger
-	case isKeywordStart(r):
+	case isOperator(r):
 		l.backup()
+		return lexOperator
+	case isKeywordStart(r):
 		return lexKeyword
 	case r == '"':
 		l.backup()
 		return lexString
+	default:
+		return lexSymbol
 	}
 
-	return lexSymbol
+	return lexStatement
 }
 
 func lexOperator(l *smtLex) stateFn {
@@ -268,9 +278,8 @@ func lexString(l *smtLex) stateFn {
 }
 
 func lexKeyword(l *smtLex) stateFn {
-	_ = l.next() // ignore leading ':'
 	l.ignore()
-	for !unicode.IsSpace(l.next()) {
+	for r := l.next(); r != eof && !isOperator(r) && !unicode.IsSpace(r); r = l.next() {
 	}
 	l.backup()
 	l.emit(YKEYWORD, iKeyword)
@@ -278,7 +287,7 @@ func lexKeyword(l *smtLex) stateFn {
 }
 
 func lexSymbol(l *smtLex) stateFn {
-	for !unicode.IsSpace(l.next()) {
+	for r := l.next(); r != eof && !isOperator(r) && !unicode.IsSpace(r); r = l.next() {
 	}
 	l.backup()
 	l.emit(YSYMBOL, iSymbol)
