@@ -293,6 +293,23 @@ type SBitVec struct {
 	Width int64
 }
 
+func SexpToTerm(sexp Sexp) (Term, error) {
+	switch s := sexp.(type) {
+	case *SString:
+		return &String{s.Str}, nil
+	case *SInt:
+		return &Int{s.Int}, nil
+	case *SBitVec:
+		return &BitVec{
+			Value: s.Value,
+			Width: s.Width,
+		}, nil
+	case *SSymbol:
+		return &Const{Identifier(s.Symbol)}, nil
+	}
+	return nil, fmt.Errorf("unparsable sexp '%s'", sexp)
+}
+
 func TermToSexp(term Term) Sexp {
 	switch t := term.(type) {
 	case *String:

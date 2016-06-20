@@ -3,6 +3,7 @@ package solver
 import (
 	"fmt"
 	"io"
+	"log"
 	"os/exec"
 
 	"github.com/bpowers/go-smt"
@@ -126,17 +127,67 @@ func (s *solver) CheckSat() (smt.Satisfiable, error) {
 	}
 }
 
+func readModel(sexps []smt.Sexp) (map[string]smt.Term, error) {
+	terms := make(map[string]smt.Term)
+
+	for _, sexp := range sexps {
+		switch app := sexp.(type) {
+		case *smt.SList:
+			if len(app.List) < 5 {
+				log.Printf("readModel: unexpected short sexp")
+				continue
+			}
+			if !smt.IsSymbol(app.List[0], "define-fun") {
+				log.Printf("readModel: unexpected symbol: %s", app.List[0])
+				continue
+			}
+			name, ok := app.List[1].(*smt.SSymbol)
+			if !ok {
+				log.Printf("readModel: var name not a symbol: %s", app.List[1])
+				continue
+			}
+
+			if slist, ok := app.List[2].(*smt.SList); !ok || len(slist.List) != 0 {
+				log.Printf("readModel: expected empty list: %s", app.List[2])
+				continue
+			}
+
+			if !smt.IsSymbol(app.List[3], "Int") {
+				log.Printf("readModel: expected Int sort, not %s", app.List[3])
+			}
+			t, err := smt.SexpToTerm(app.List[4])
+			if err != nil {
+				log.Printf("couldn't parse sexp: %s", err)
+			}
+			terms[name.Symbol] = t
+		default:
+			return nil, fmt.Errorf("expected model list, got %s", app)
+		}
+	}
+
+	return terms, nil
+
+}
+
 func (s *solver) GetModel() (map[string]smt.Term, error) {
 	r, err := s.Command(&smt.SList{[]smt.Sexp{
 		&smt.SSymbol{"get-model"}}})
 	if err != nil {
 		return nil, fmt.Errorf("Command: %s", err)
 	}
-	terms := make(map[string]smt.Term)
 
-	fmt.Printf("get-model: %s\n", r)
-
-	return terms, nil
+	switch app := r.(type) {
+	case *smt.SList:
+		if len(app.List) == 0 {
+			return nil, fmt.Errorf("expected model, got empty slist")
+		}
+		if !smt.IsSymbol(app.List[0], "model") {
+			return nil, fmt.Errorf("expected model, got2 %s", app)
+		}
+		return readModel(app.List[1:])
+	default:
+		return nil, fmt.Errorf("expected model, got %s", r)
+	}
 }
 
 func (s *solver) Push() {
