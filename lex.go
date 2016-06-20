@@ -120,8 +120,9 @@ func (l *smtLex) next() rune {
 			l.width = 0
 			return 0
 		}
-		l.line = l.in.Text()
+		l.line = l.in.Text() + "\n"
 		l.pos = 0
+		l.start = 0
 	}
 	r, width := utf8.DecodeRuneInString(l.line[l.pos:])
 	l.pos += width
@@ -168,7 +169,7 @@ func (l *smtLex) emit(yyTy rune, ty iType) {
 		yyKind: int(yyTy),
 		kind:   ty,
 	}
-	// log.Printf("t(%s): %#v\n", l.s[l.start:l.pos], t)
+	//log.Printf("t(%s): %#v\n", l.line[l.start:l.pos], t)
 	l.last = t
 	l.items <- t
 	if ty != iEOF {

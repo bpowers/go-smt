@@ -7,6 +7,8 @@ import (
 type Identifier string
 type Satisfiable int
 
+//go:generate stringer -type=Satisfiable
+
 const (
 	Sat Satisfiable = iota
 	Unsat
