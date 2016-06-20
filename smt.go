@@ -19,6 +19,7 @@ var (
 )
 
 type Solver interface {
+	Close()
 	DeclareConst(id string, sort Sort) error
 	Assert(t Term) error
 	CheckSat() (Satisfiable, error)
