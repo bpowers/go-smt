@@ -1,8 +1,7 @@
-package z3
+package solver
 
 import (
 	"fmt"
-	"go/token"
 	"io"
 	"os/exec"
 
@@ -13,8 +12,8 @@ func isSuccess(sexp smt.Sexp) bool {
 	return smt.IsSymbol(sexp, "success")
 }
 
-func NewSolverAt(path string) (smt.Solver, error) {
-	cmd := exec.Command(path, "-in", "-smt2")
+func NewPipedSolver(exe string, args ...string) (smt.Solver, error) {
+	cmd := exec.Command(exe, args...)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, fmt.Errorf("StdinPipe: %s", err)
@@ -29,9 +28,10 @@ func NewSolverAt(path string) (smt.Solver, error) {
 	}
 
 	s := &solver{
-		cmd:    cmd,
-		stdin:  stdin,
-		stdout: stdout,
+		cmd:          cmd,
+		stdin:        stdin,
+		stdoutCloser: stdout,
+		results:      smt.NewParser(stdout),
 	}
 
 	r, err := s.Command(&smt.SList{[]smt.Sexp{
@@ -51,9 +51,10 @@ func NewSolverAt(path string) (smt.Solver, error) {
 }
 
 type solver struct {
-	cmd    *exec.Cmd
-	stdin  io.WriteCloser
-	stdout io.ReadCloser
+	cmd          *exec.Cmd
+	stdin        io.WriteCloser
+	stdoutCloser io.Closer
+	results      *smt.Parser
 }
 
 func (s *solver) Command(sexp smt.Sexp) (smt.Sexp, error) {
@@ -68,26 +69,12 @@ func (s *solver) Command(sexp smt.Sexp) (smt.Sexp, error) {
 		return nil, fmt.Errorf("stdin.Write: %s", err)
 	}
 
-	buf := make([]byte, 8092)
-	n, err = s.stdout.Read(buf)
+	result, err := s.results.Read()
 	if err != nil {
-		return nil, fmt.Errorf("stdout.Read: %s", err)
+		return nil, fmt.Errorf("Parser.Read: %s", err)
 	}
 
-	fs := token.NewFileSet()
-	f := fs.AddFile("<z3out>", -1, n)
-
-	r := string(buf[:n])
-	sexps, err := smt.Parse(f, r)
-	if err != nil {
-		return nil, fmt.Errorf("Parse('%s'): %s", r, err)
-	}
-
-	if len(sexps) != 1 {
-		return nil, fmt.Errorf("Parse('%s'): expected 1 sexp not %d", r, len(sexps))
-	}
-
-	return sexps[0], nil
+	return result, nil
 }
 
 func (s *solver) Close() {
