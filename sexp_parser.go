@@ -3,7 +3,6 @@ package smt
 import (
 	"errors"
 	"fmt"
-	"go/token"
 	"io"
 )
 
@@ -39,14 +38,10 @@ func NewParser(r io.Reader) *Parser {
 }
 
 func (p *Parser) streamingParse(r io.Reader) {
-
-	fs := token.NewFileSet()
-	f := fs.AddFile("<sexp-in>", -1, 2<<31)
-
 	// this is weird, but without passing in a reference to this
 	// parser object through the lexer, there isn't another good
 	// way to keep the parser and lexer reentrant.
-	err := smtParse(newSmtLex(r, f, p))
+	err := smtParse(newSmtLex(r, p))
 	if err != 0 {
 		p.errs <- fmt.Errorf("%d parse errors", err)
 	} else {

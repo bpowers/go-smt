@@ -5,11 +5,11 @@
 package smt
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"go/token"
 	"io"
-	"io/ioutil"
 	"log"
 	"strings"
 	"unicode"
@@ -34,7 +34,7 @@ const (
 )
 
 type tok struct {
-	pos    token.Pos
+	pos    int
 	val    string
 	ival   int64
 	kind   iType
@@ -44,11 +44,11 @@ type tok struct {
 type stateFn func(*smtLex) stateFn
 
 type smtLex struct {
-	f     *token.File
-	s     string // the string being scanned
-	pos   int    // current position in the input
-	start int    // start of this token
-	width int    // width of the last rune
+	in    *bufio.Scanner
+	line  string
+	pos   int // current position in the input
+	start int // start of this token
+	width int // width of the last rune
 	last  tok
 	items chan tok // channel of scanned items
 	state stateFn
@@ -68,14 +68,9 @@ func (l *smtLex) Lex(lval *smtSymType) int {
 	}
 }
 
-func newSmtLex(r io.Reader, file *token.File, p *Parser) *smtLex {
-	buf, err := ioutil.ReadAll(r)
-	if err != nil {
-		panic(fmt.Sprintf("ReadAll: %s", err))
-	}
+func newSmtLex(r io.Reader, p *Parser) *smtLex {
 	return &smtLex{
-		f:      file,
-		s:      string(buf),
+		in:     bufio.NewScanner(r),
 		items:  make(chan tok, 2),
 		state:  lexStatement,
 		parser: p,
@@ -88,11 +83,11 @@ func (l *smtLex) getLine(pos token.Position) string {
 		col = pos.Offset
 	}
 	p := pos.Offset - col
-	if p >= len(l.s) {
+	if p >= len(l.line) {
 		return fmt.Sprintf("getLine: o%d c%d, len%d",
-			pos.Offset, col, len(l.s))
+			pos.Offset, col, len(l.line))
 	}
-	result := l.s[pos.Offset-col:]
+	result := l.line[pos.Offset-col:]
 	if newline := strings.IndexRune(result, '\n'); newline != -1 {
 		result = result[:newline]
 	}
@@ -100,10 +95,9 @@ func (l *smtLex) getLine(pos token.Position) string {
 }
 
 func (l *smtLex) Error(s string) {
-	pos := l.f.Position(l.last.pos)
-	line := l.getLine(pos)
+	line := l.line
 
-	col := pos.Column
+	col := l.pos
 	if col > len(line) {
 		col = len(line)
 	}
@@ -114,24 +108,25 @@ func (l *smtLex) Error(s string) {
 
 	line = strings.Replace(line, "\t", "        ", -1)
 
-	fmt.Printf("%s:%d:%d: error: %s\n", pos.Filename,
-		pos.Line, col, s)
+	fmt.Printf("%d: error: %s\n", col, s)
 	fmt.Printf("%s\n", line)
 	fmt.Printf("%s^\n", prefix)
 }
 
 func (l *smtLex) next() rune {
-	if l.pos >= len(l.s) {
-		l.width = 0
-		return 0
+	if l.pos >= len(l.line) {
+		ok := l.in.Scan()
+		if !ok {
+			l.width = 0
+			return 0
+		}
+		l.line = l.in.Text()
+		l.pos = 0
 	}
-	r, width := utf8.DecodeRuneInString(l.s[l.pos:])
+	r, width := utf8.DecodeRuneInString(l.line[l.pos:])
 	l.pos += width
 	l.width = width
 
-	if r == '\n' {
-		l.f.AddLine(l.pos + 1)
-	}
 	return r
 }
 
@@ -168,8 +163,8 @@ func (l *smtLex) acceptRun(valid string) {
 
 func (l *smtLex) emit(yyTy rune, ty iType) {
 	t := tok{
-		pos:    l.f.Pos(l.pos),
-		val:    l.s[l.start:l.pos],
+		pos:    l.pos,
+		val:    l.line[l.start:l.pos],
 		yyKind: int(yyTy),
 		kind:   ty,
 	}

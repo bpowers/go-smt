@@ -1,9 +1,9 @@
 package smt
 
 import (
-	"bytes"
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -26,7 +26,7 @@ var sexpRTData = []sexpRTTest{
 
 func TestSexpRT(t *testing.T) {
 	for _, test := range sexpRTData {
-		r := bytes.NewReader([]byte(test.input))
+		r := strings.NewReader(test.input)
 		p := NewParser(r)
 		sexp, err := p.Read()
 		if err != nil {
