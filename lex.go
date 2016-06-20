@@ -8,6 +8,8 @@ import (
 	"bytes"
 	"fmt"
 	"go/token"
+	"io"
+	"io/ioutil"
 	"log"
 	"strings"
 	"unicode"
@@ -51,7 +53,7 @@ type smtLex struct {
 	items chan tok // channel of scanned items
 	state stateFn
 
-	result *[]Sexp
+	parser *Parser
 }
 
 func (l *smtLex) Lex(lval *smtSymType) int {
@@ -66,13 +68,17 @@ func (l *smtLex) Lex(lval *smtSymType) int {
 	}
 }
 
-func newSmtLex(input string, file *token.File, result *[]Sexp) *smtLex {
+func newSmtLex(r io.Reader, file *token.File, p *Parser) *smtLex {
+	buf, err := ioutil.ReadAll(r)
+	if err != nil {
+		panic(fmt.Sprintf("ReadAll: %s", err))
+	}
 	return &smtLex{
 		f:      file,
-		s:      input,
+		s:      string(buf),
 		items:  make(chan tok, 2),
 		state:  lexStatement,
-		result: result,
+		parser: p,
 	}
 }
 

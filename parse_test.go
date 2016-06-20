@@ -1,9 +1,8 @@
 package smt
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
-	"go/token"
 	"reflect"
 	"testing"
 )
@@ -26,29 +25,29 @@ var sexpRTData = []sexpRTTest{
 }
 
 func TestSexpRT(t *testing.T) {
-	for i, test := range sexpRTData {
-		fs := token.NewFileSet()
-		f := fs.AddFile(fmt.Sprintf("<Test %d>", i), -1, len(test.input))
-		sexps, err := Parse(f, test.input)
+	for _, test := range sexpRTData {
+		r := bytes.NewReader([]byte(test.input))
+		p := NewParser(r)
+		sexp, err := p.Read()
 		if err != nil {
 			t.Fatalf("Parse('%s'): %s", test.input, err)
 		}
-		if len(sexps) != 1 {
-			t.Fatalf("len(%#v) != 1", sexps)
-		}
-
-		if !reflect.DeepEqual(sexps[0], test.sexp) {
-			buf, err := json.Marshal(sexps[0])
+		if !reflect.DeepEqual(sexp, test.sexp) {
+			buf, err := json.Marshal(sexp)
 			if err != nil {
-				t.Fatalf("couldn't encode %#v", sexps[0])
+				t.Fatalf("couldn't encode %#v", sexp)
 			}
 			t.Fatalf("expected %s == %#v", string(buf), test.sexp)
 		}
 
-		sRT := sexps[0].String()
+		sRT := sexp.String()
 		sExpected := test.sexp.String()
 		if sRT != sExpected {
 			t.Fatalf("serialized versions differ: %s != %s", sRT, sExpected)
+		}
+
+		if _, err = p.Read(); err != ParserEOF {
+			t.Fatalf("expected EOF")
 		}
 	}
 }

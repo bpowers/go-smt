@@ -5,12 +5,10 @@ import __yyfmt__ "fmt"
 
 //line parse.y:7
 import (
-	"fmt"
-	"go/token"
 	"strconv"
 )
 
-//line parse.y:19
+//line parse.y:17
 type smtSymType struct {
 	yys   int
 	sexps []Sexp
@@ -43,23 +41,6 @@ const smtEofCode = 1
 const smtErrCode = 2
 const smtInitialStackSize = 16
 
-//line parse.y:77
-
-/* start of programs */
-
-func Parse(f *token.File, str string) ([]Sexp, error) {
-	// this is weird, but without passing in a reference to this
-	// result object, there isn't another good way to keep the
-	// parser and lexer reentrant.
-	var result []Sexp
-	err := smtParse(newSmtLex(str, f, &result))
-	if err != 0 {
-		return nil, fmt.Errorf("%d parse errors", err)
-	}
-
-	return result, nil
-}
-
 //line yacctab:1
 var smtExca = [...]int{
 	-1, 1,
@@ -67,7 +48,7 @@ var smtExca = [...]int{
 	-2, 0,
 }
 
-const smtNprod = 9
+const smtNprod = 10
 const smtPrivate = 57344
 
 var smtTokenNames []string
@@ -77,35 +58,35 @@ const smtLast = 18
 
 var smtAct = [...]int{
 
-	4, 3, 5, 6, 7, 8, 10, 4, 2, 5,
-	6, 7, 8, 1, 0, 0, 0, 9,
+	3, 1, 4, 5, 6, 7, 10, 3, 2, 4,
+	5, 6, 7, 8, 0, 0, 0, 9,
 }
 var smtPact = [...]int{
 
-	-1000, -1000, 3, -1000, -1000, -1000, -1000, -1000, -1000, -4,
+	-1000, 3, -1000, -1000, -1000, -1000, -1000, -1000, -4, -1000,
 	-1000,
 }
 var smtPgo = [...]int{
 
-	0, 8, 13, 1,
+	0, 13, 8, 1,
 }
 var smtR1 = [...]int{
 
-	0, 2, 1, 1, 3, 3, 3, 3, 3,
+	0, 3, 3, 1, 1, 2, 2, 2, 2, 2,
 }
 var smtR2 = [...]int{
 
-	0, 1, 0, 2, 1, 1, 1, 1, 3,
+	0, 0, 2, 0, 2, 1, 1, 1, 1, 3,
 }
 var smtChk = [...]int{
 
-	-1000, -2, -1, -3, 4, 6, 7, 8, 9, -1,
+	-1000, -3, -2, 4, 6, 7, 8, 9, -1, -2,
 	10,
 }
 var smtDef = [...]int{
 
-	2, -2, 1, 3, 4, 5, 6, 7, 2, 0,
-	8,
+	1, -2, 2, 5, 6, 7, 8, 3, 0, 4,
+	9,
 }
 var smtTok1 = [...]int{
 
@@ -461,52 +442,56 @@ smtdefault:
 	switch smtnt {
 
 	case 1:
-		smtDollar = smtS[smtpt-1 : smtpt+1]
-		//line parse.y:37
+		smtDollar = smtS[smtpt-0 : smtpt+1]
+		//line parse.y:34
 		{
-			smtVAL.sexps = smtDollar[1].sexps
-			*smtlex.(*smtLex).result = smtVAL.sexps
 		}
 	case 2:
+		smtDollar = smtS[smtpt-2 : smtpt+1]
+		//line parse.y:37
+		{
+			smtlex.(*smtLex).parser.emit(smtDollar[2].sexp)
+		}
+	case 3:
 		smtDollar = smtS[smtpt-0 : smtpt+1]
-		//line parse.y:44
+		//line parse.y:43
 		{
 			smtVAL.sexps = []Sexp{}
 		}
-	case 3:
+	case 4:
 		smtDollar = smtS[smtpt-2 : smtpt+1]
-		//line parse.y:48
+		//line parse.y:47
 		{
 			smtVAL.sexps = append(smtDollar[1].sexps, smtDollar[2].sexp)
 		}
-	case 4:
+	case 5:
 		smtDollar = smtS[smtpt-1 : smtpt+1]
-		//line parse.y:54
+		//line parse.y:53
 		{
 			i, _ := strconv.ParseInt(smtDollar[1].tok.val, 10, 0)
 			smtVAL.sexp = &SInt{i}
 		}
-	case 5:
+	case 6:
 		smtDollar = smtS[smtpt-1 : smtpt+1]
-		//line parse.y:59
+		//line parse.y:58
 		{
 			smtVAL.sexp = &SString{smtDollar[1].tok.val}
 		}
-	case 6:
+	case 7:
 		smtDollar = smtS[smtpt-1 : smtpt+1]
-		//line parse.y:63
+		//line parse.y:62
 		{
 			smtVAL.sexp = &SSymbol{smtDollar[1].tok.val}
 		}
-	case 7:
+	case 8:
 		smtDollar = smtS[smtpt-1 : smtpt+1]
-		//line parse.y:67
+		//line parse.y:66
 		{
 			smtVAL.sexp = &SKeyword{smtDollar[1].tok.val}
 		}
-	case 8:
+	case 9:
 		smtDollar = smtS[smtpt-3 : smtpt+1]
-		//line parse.y:71
+		//line parse.y:70
 		{
 			smtVAL.sexp = &SList{smtDollar[2].sexps}
 		}

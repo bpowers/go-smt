@@ -7,9 +7,7 @@
 package smt
 
 import (
-	"go/token"
 	"strconv"
-	"fmt"
 )
 
 %}
@@ -25,18 +23,19 @@ import (
 
 // any non-terminal which returns a value needs a type, which is
 // really a field name in the above union struct
-%type <sexps>  sexp_list top
-%type <sexp>   sexp
+%type <sexps>  sexp_list
+%type <sexp>   sexp top
 
 // same for terminals
 %token <tok> yINT yHEX ySTRING ySYMBOL yKEYWORD
 
 %%
 
-top:	sexp_list
+top:	{
+	}
+|	top sexp
 	{
-		$$ = $1
-		*smtlex.(*smtLex).result = $$
+		smtlex.(*smtLex).parser.emit($2)
 	}
 ;
 
@@ -72,19 +71,3 @@ sexp:	yINT
 		$$ = &SList{$2}
 	}
 ;
-
-
-%% /* start of programs */
-
-func Parse(f *token.File, str string) ([]Sexp, error) {
-	// this is weird, but without passing in a reference to this
-	// result object, there isn't another good way to keep the
-	// parser and lexer reentrant.
-	var result []Sexp
-	err := smtParse(newSmtLex(str, f, &result))
-	if err != 0 {
-		return nil, fmt.Errorf("%d parse errors", err)
-	}
-
-	return result, nil
-}
