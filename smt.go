@@ -14,8 +14,8 @@ const (
 )
 
 var (
-	IntSort  = &SortName{"int"}
-	BoolSort = &SortName{"bool"}
+	IntSort  = &SortName{"Int"}
+	BoolSort = &SortName{"Bool"}
 )
 
 type Solver interface {
@@ -26,6 +26,9 @@ type Solver interface {
 	GetModel() (map[string]Term, error)
 	Push()
 	Pop() error
+
+	// low-level interface
+	Command(sexp Sexp) (Sexp, error)
 }
 
 type Sort interface {
@@ -42,7 +45,7 @@ type SortApp struct {
 }
 
 type BitVecSort struct {
-	Width int
+	Width int64
 }
 
 func (*SortName) sort()   {}
@@ -280,12 +283,77 @@ type SKeyword struct {
 }
 
 type SInt struct {
-	Int int
+	Int int64
 }
 
 type SBitVec struct {
 	Value int64
 	Width int64
+}
+
+func TermToSexp(term Term) Sexp {
+	switch t := term.(type) {
+	case *String:
+		return &SString{t.String}
+	case *Int:
+		return &SInt{t.Int}
+	case *BitVec:
+		return &SBitVec{t.Value, t.Width}
+	case *Const:
+		return IdToSexp(t.Id)
+	case *App:
+		args := make([]Sexp, 0, len(t.Args)+1)
+		args = append(args, IdToSexp(t.Id))
+		for _, arg := range t.Args {
+			args = append(args, TermToSexp(arg))
+		}
+		return &SList{args}
+	case *Let:
+		return &SList{[]Sexp{
+			&SSymbol{"let"},
+			&SList{[]Sexp{&SList{[]Sexp{
+				IdToSexp(t.Id), TermToSexp(t.Value),
+			}}}},
+			TermToSexp(t.In),
+		}}
+	}
+	panic("unreachable")
+}
+
+func IdToSexp(id Identifier) Sexp {
+	return &SSymbol{string(id)}
+}
+
+func SortToSexp(sort Sort) Sexp {
+	switch s := sort.(type) {
+	case *SortName:
+		return IdToSexp(s.Id)
+	case *SortApp:
+		args := make([]Sexp, 0, len(s.Args)+1)
+		args = append(args, IdToSexp(s.Id))
+		for _, arg := range s.Args {
+			args = append(args, SortToSexp(arg))
+		}
+		return &SList{args}
+	case *BitVecSort:
+		return &SList{[]Sexp{
+			&SSymbol{"_"},
+			&SSymbol{"BitVec"},
+			&SInt{s.Width},
+		}}
+	default:
+		panic("unknown sort")
+	}
+}
+
+func IsSymbol(sexp Sexp, id string) bool {
+	switch s := sexp.(type) {
+	case *SSymbol:
+		if s.Symbol == id {
+			return true
+		}
+	}
+	return false
 }
 
 func (*SList) sexp()    {}
@@ -297,11 +365,13 @@ func (*SBitVec) sexp()  {}
 
 func (s *SList) String() string {
 	r := "("
-	for _, child := range s.List {
+	for i, child := range s.List {
 		r += child.String()
-		r += " "
+		if i != len(s.List)-1 {
+			r += " "
+		}
 	}
-	r += ")"
+	r += ")\n"
 	return r
 }
 func (s *SSymbol) String() string  { return s.Symbol }

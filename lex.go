@@ -64,7 +64,6 @@ func (l *smtLex) Lex(lval *smtSymType) int {
 			l.state = l.state(l)
 		}
 	}
-	panic("unreachable")
 }
 
 func newSmtLex(input string, file *token.File, result *[]Sexp) *smtLex {
@@ -78,12 +77,16 @@ func newSmtLex(input string, file *token.File, result *[]Sexp) *smtLex {
 }
 
 func (l *smtLex) getLine(pos token.Position) string {
-	p := pos.Offset - pos.Column
-	if p < 0 || p >= len(l.s) {
-		return fmt.Sprintf("getLine: o%d c%d, len%d",
-			pos.Offset, pos.Column, len(l.s))
+	col := pos.Column
+	if col > pos.Offset {
+		col = pos.Offset
 	}
-	result := l.s[pos.Offset-pos.Column:]
+	p := pos.Offset - col
+	if p >= len(l.s) {
+		return fmt.Sprintf("getLine: o%d c%d, len%d",
+			pos.Offset, col, len(l.s))
+	}
+	result := l.s[pos.Offset-col:]
 	if newline := strings.IndexRune(result, '\n'); newline != -1 {
 		result = result[:newline]
 	}
@@ -93,15 +96,20 @@ func (l *smtLex) getLine(pos token.Position) string {
 func (l *smtLex) Error(s string) {
 	pos := l.f.Position(l.last.pos)
 	line := l.getLine(pos)
+
+	col := pos.Column
+	if col > len(line) {
+		col = len(line)
+	}
 	// we want the number of spaces (taking into account tabs)
 	// before the problematic token
-	prefixLen := pos.Column + strings.Count(line[:pos.Column], "\t")*7 - 1
+	prefixLen := col + strings.Count(line[:col], "\t")*7 - 1
 	prefix := strings.Repeat(" ", prefixLen)
 
 	line = strings.Replace(line, "\t", "        ", -1)
 
 	fmt.Printf("%s:%d:%d: error: %s\n", pos.Filename,
-		pos.Line, pos.Column, s)
+		pos.Line, col, s)
 	fmt.Printf("%s\n", line)
 	fmt.Printf("%s^\n", prefix)
 }

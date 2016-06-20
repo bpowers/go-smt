@@ -483,7 +483,7 @@ smtdefault:
 		smtDollar = smtS[smtpt-1 : smtpt+1]
 		//line parse.y:54
 		{
-			i, _ := strconv.Atoi(smtDollar[1].tok.val)
+			i, _ := strconv.ParseInt(smtDollar[1].tok.val, 10, 0)
 			smtVAL.sexp = &SInt{i}
 		}
 	case 5:

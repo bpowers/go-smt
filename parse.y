@@ -52,7 +52,7 @@ sexp_list:
 
 sexp:	yINT
 	{
-		i, _ := strconv.Atoi($1.val)
+		i, _ := strconv.ParseInt($1.val, 10, 0)
 		$$ = &SInt{i}
 	}
 |	ySTRING
